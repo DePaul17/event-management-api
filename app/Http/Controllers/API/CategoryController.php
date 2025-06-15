@@ -13,7 +13,15 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        return Category::all();
+        try {
+            $categories = Category::paginate(10);
+            return response()->json($categories);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la récupération des catégories.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -21,15 +29,23 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|unique:categories',
-        ]);
+       try {
+            $request->validate([
+                'name' => 'required|string|unique:categories',
+            ]);
 
-        $category = Category::create([
-            'name' => $request->name,
-        ]);
+            $category = Category::create([
+                'name' => $request->name,
+            ]);
 
-        return response()->json($category, 201);
+            return response()->json($category, 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Une erreur est survenue lors de la création de la catégorie.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

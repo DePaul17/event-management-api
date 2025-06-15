@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Event;
+use App\Models\EventSummary;
 
 class EventController extends Controller
 {
@@ -58,7 +59,6 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        // Vérifie que c'est l'organisateur
         if ($event->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Non autorisé.'], 403);
         }
@@ -94,5 +94,61 @@ class EventController extends Controller
         $event->delete();
 
         return response()->json(['message' => 'Événement supprimé']);
+    }
+
+    public function search(Request $request)
+    {
+        try {
+            $query = Event::with('category', 'organizer');
+
+            if ($request->has('search')) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%$search%")
+                        ->orWhere('description', 'like', "%$search%")
+                        ->orWhere('location', 'like', "%$search%");
+                });
+            }
+
+            if ($request->filled('event_date')) {
+                $query->whereDate('event_date', $request->input('event_date'));
+            }
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->input('category_id'));
+            }
+
+            $events = $query->paginate(10);
+
+            if ($events->isEmpty()) {
+                return response()->json(['message' => 'Aucun événement trouvé.'], 404);
+            }
+
+            return response()->json($events);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors de la recherche.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //Fonction admin
+    public function places($id)
+    {
+        $summary = EventSummary::find($id);
+
+        if (! $summary) {
+            return response()->json(['message' => 'Événement non trouvé.'], 404);
+        }
+
+        return response()->json([
+            'event_id'           => $summary->event_id,
+            'title'              => $summary->title,
+            'max_participants'   => $summary->max_participants,
+            'total_reservations' => $summary->total_reservations,
+            'remaining_spots'    => $summary->remaining_spots,
+        ]);
     }
 }

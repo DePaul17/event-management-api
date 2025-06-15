@@ -17,7 +17,7 @@ class IsAdmin
     public function handle(Request $request, Closure $next)
     {
         if (! $request->user() || ! $request->user()->is_admin) {
-            return response()->json(['message' => 'Accès réservé aux administrateurs.'], 403);
+            return response()->json(['message' => 'Accès interdit.'], 403);
         }
 
         return $next($request);
