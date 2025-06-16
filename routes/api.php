@@ -35,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/events', [EventController::class, 'index']);
     Route::get('/events/{id}', [EventController::class, 'show']);
 
-    //Route::get('/events/search', [EventController::class, 'search']);
+    //Recherche et filtre
     Route::post('/events/search', [EventController::class, 'search']);
 
     Route::middleware('admin')->group(function () {

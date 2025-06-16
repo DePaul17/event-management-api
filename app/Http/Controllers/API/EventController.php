@@ -96,7 +96,7 @@ class EventController extends Controller
         return response()->json(['message' => 'Événement supprimé']);
     }
 
-    public function search(Request $request)
+    /*public function search(Request $request)
     {
         try {
             $query = Event::with('category', 'organizer');
@@ -130,6 +130,47 @@ class EventController extends Controller
             return response()->json([
                 'message' => 'Erreur lors de la recherche.',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }*/
+
+    public function search(Request $request)
+    {
+        try {
+            $query = Event::with('category', 'organizer');
+
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%$search%")
+                    ->orWhere('description', 'like', "%$search%");
+                });
+            }
+
+            if ($request->filled('location')) {
+                $query->where('location', 'like', "%" . $request->input('location') . "%");
+            }
+
+            if ($request->filled('date')) {
+                $query->whereDate('event_date', $request->input('date'));
+            }
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->input('category_id'));
+            }
+
+            $events = $query->paginate(10);
+
+            if ($events->isEmpty()) {
+                return response()->json(['message' => 'Aucun événement trouvé.'], 404);
+            }
+
+            return response()->json($events);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors de la recherche.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
